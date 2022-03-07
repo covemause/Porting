@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.32014.148
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Porting.Core", ".\Porting.Core\Porting.Core.csproj", "{D1F41F5B-1083-4DD1-93CB-13E4FD1ABCA2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Porting.Core.Test", ".\Porting.Core.Test\Porting.Core.Test.csproj", "{DC8C91B8-98F9-4802-8FA3-D12A2DF2A4DE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D1F41F5B-1083-4DD1-93CB-13E4FD1ABCA2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D1F41F5B-1083-4DD1-93CB-13E4FD1ABCA2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D1F41F5B-1083-4DD1-93CB-13E4FD1ABCA2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D1F41F5B-1083-4DD1-93CB-13E4FD1ABCA2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DC8C91B8-98F9-4802-8FA3-D12A2DF2A4DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DC8C91B8-98F9-4802-8FA3-D12A2DF2A4DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DC8C91B8-98F9-4802-8FA3-D12A2DF2A4DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DC8C91B8-98F9-4802-8FA3-D12A2DF2A4DE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {0233ACC1-0083-489E-93FA-793A9E3BD978}
+	EndGlobalSection
+EndGlobal

@@ -49,6 +49,19 @@ namespace Porting.Core.Data
         #endregion
 
         /// <summary>
+        /// 
+        /// </summary>
+        public CtmBase(int indent, string originalCode, string comment, string value, CtmBase? parent, List<CtmBase> innerCtmList)
+        {
+            Indent = indent;
+            OriginalCode = originalCode;
+            Comment = comment;
+            Value = value;
+            Parent = parent;
+            InnerCtmList = innerCtmList;
+        }
+
+        /// <summary>
         /// コンストラクタ
         /// </summary>
         /// <param name="ctmBaseFunc">生成に必要な要素群</param>

@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.32014.148
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Porting.Core", ".\Porting.Core\Porting.Core.csproj", "{D1F41F5B-1083-4DD1-93CB-13E4FD1ABCA2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Porting.Core", "Porting.Core\Porting.Core.csproj", "{D1F41F5B-1083-4DD1-93CB-13E4FD1ABCA2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Porting.Core.Test", ".\Porting.Core.Test\Porting.Core.Test.csproj", "{DC8C91B8-98F9-4802-8FA3-D12A2DF2A4DE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Porting.Core.Test", "Porting.Core.Test\Porting.Core.Test.csproj", "{DC8C91B8-98F9-4802-8FA3-D12A2DF2A4DE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

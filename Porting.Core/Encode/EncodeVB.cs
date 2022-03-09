@@ -14,6 +14,9 @@ namespace Porting.Core.Encode
     /// <remarks>
     /// 参考（VBA）：https://docs.microsoft.com/ja-jp/office/vba/language/reference/statements
     /// ※異なる構文もあるが参考にはなる
+    /// 
+    /// コンバートできない課題一覧
+    /// ・On Error Resume Next : エラー続行
     /// </remarks>
     public class EncodeVB
     {
@@ -40,32 +43,37 @@ namespace Porting.Core.Encode
             encWith,
         }
 
-        private CtmBase? currentCtmBase = null;
-
-        public List<CtmBase> CtmBaseList = new List<CtmBase>();
+        public CtmBase? currentCtmBase = null;
 
         public void Execute(string[] codeLines)
         {
-            CtmBase? current = null;
+            currentCtmBase = null;
             foreach(var line in codeLines)
             {
-                Excecute(current, line);
+                var ret = Execute(currentCtmBase, line);
+                if (ret == null) throw new NullReferenceException();
+
+                if (currentCtmBase == null)
+                {
+                    currentCtmBase = ret;
+                }
+                else
+                {
+                    ret.Parent = currentCtmBase;
+                    currentCtmBase.InnerCtmList.Add(ret);
+                }
             }
         }
 
-        public void Excecute(CtmBase current, string codeLine)
+        public CtmBase? Execute(CtmBase? current, string codeLine)
         {
-            var ctmBuff = new CtmBase(new CtmBaseContext(current, codeLine, GetIndent, GetComment));
-            if (ctmBuff == null) throw new Exception();
-
-            currentCtmBase = ctmBuff;
-
-            if (currentCtmBase != null)
-            {
-            }
+            CtmBase? result = null;
+            var baseContext = new CtmBaseContext(current, codeLine, GetIndent, GetComment);
+            //if (ctmBuff == null) throw new Exception();
 
             // インデント、コメントは外している状態で判定
-            switch(getEncodePatturn(ctmBuff.Value))
+            //switch (getEncodePatturn(ctmBuff.Value))
+            switch (getEncodePatturn(codeLine.Trim()))
             {
                 case EncodePatturn.encCall:
                     break;
@@ -80,10 +88,14 @@ namespace Porting.Core.Encode
                 case EncodePatturn.encFor:
                     break;
                 case EncodePatturn.encFunc:
+                    result = new CtmFunction(baseContext,
+                        new CtmFunctionContext(GetAccessModifier, GetFunctionKind, GetMethodName, GetFunctionArgs, GetFunctionResultValue));
                     break;
                 case EncodePatturn.encGoto:
                     break;
                 case EncodePatturn.encIF:
+                    result = new CtmIf(baseContext,
+                        new CtmIfContext(GetIfKind, GetConditions, GetInnerValue));
                     break;
                 case EncodePatturn.encPropaty:
                     break;
@@ -100,8 +112,10 @@ namespace Porting.Core.Encode
                 case EncodePatturn.encWith:
                     break;
                 default:
-                    throw new NotSupportedException("Not Patturn!" + getEncodePatturn(ctmBuff.Value).ToString());
+                    throw new NotSupportedException("Not Patturn!");
             }
+
+            return result;
         }
 
         private EncodePatturn getEncodePatturn(string codeLine)
@@ -183,7 +197,7 @@ namespace Porting.Core.Encode
 
         private EncodePatturn splitCheck(string codeLine)
         {
-            var splitSpace = codeLine.Split(' ');
+            var splitSpace = codeLine.ToLower().Split(' ');
             if (splitSpace.Length == -1)
             {
                 // スペースなしは、再判定が必要
@@ -436,8 +450,7 @@ namespace Porting.Core.Encode
         #region CtmFunctionContext
         public CtmFunction.AccessModifierEnum GetAccessModifier(string value)
         {
-            var buff = value.ToLower();
-            var buffHead = buff.Substring(0, buff.IndexOf(' ') - 1);
+            var buffHead = value.Substring(0, value.IndexOf(' ')).ToLower();
 
             switch (buffHead)
             {
@@ -447,10 +460,81 @@ namespace Porting.Core.Encode
                     return CtmFunction.AccessModifierEnum.Public;
                 default:
                     // 省略と判断
-                    return CtmFunction.AccessModifierEnum.None;
+                    return CtmFunction.AccessModifierEnum.Private;
             }
 
         }
+        public string GetMethodName(string value)
+        {
+            // メソッド名後の（を起点に前方のスペースまで探す。スペースがなければ全部がメソッド名
+            var buffHead = value.Substring(0, value.IndexOf('('));
+            var buffSpaceList = buffHead.Split(' ');
+            if (buffSpaceList.Length == 2) return buffSpaceList[1];
+            if (buffSpaceList.Length == 3) return buffSpaceList[2];
+
+            throw new NotSupportedException(); // どれにも該当しなければサポート外
+        }
+
+        public CtmFunction.KindEnum GetFunctionKind(string value)
+        {
+            // End
+            if (value.Substring(0, 5).ToLower() == "end s") return CtmFunction.KindEnum.EndSub;
+            if (value.Substring(0, 5).ToLower() == "end f") return CtmFunction.KindEnum.EndFunction;
+
+            // Exit
+            if (value.Substring(0, 6).ToLower() == "exit s") return CtmFunction.KindEnum.ExitSub;
+            if (value.Substring(0, 6).ToLower() == "exit f") return CtmFunction.KindEnum.ExitFunction;
+
+
+            var buffAccessPos = value.IndexOf(' ');
+            var buffAccess = value.Substring(0, buffAccessPos);
+            if (buffAccess.ToLower() == "public" || buffAccess.ToLower() == "private")
+            {
+                if (value.Substring(buffAccessPos + 1, 1).ToLower() == "s") return CtmFunction.KindEnum.StartSub;
+                if (value.Substring(buffAccessPos + 1, 1).ToLower() == "f") return CtmFunction.KindEnum.StartFunction;
+                throw new NotSupportedException(); // Function, Sub以外はサポート外
+            }
+
+            if (buffAccess == "Sub") return CtmFunction.KindEnum.StartSub;
+            if (buffAccess == "Function") return CtmFunction.KindEnum.StartFunction;
+
+            throw new NotSupportedException(); // どれにも該当しなければサポート外
+
+        }
+
+        public string[] GetFunctionArgs(string value)
+        {
+            var startPos = value.IndexOf('(') + 1;
+            var endPos = value.IndexOf(')');
+
+            if (endPos - startPos == 1) return new string[] { "" }; // ()の場合は空文字
+
+            
+            // ParseFullName(Path As String, FileName As String, Byref FullName As String) As Boolean => { "Path As String", " FileName As String", " Byref FullName As String" }
+            var resultArgs = value.Substring(startPos, endPos - startPos).Split(',');
+
+            // { "Path As String", " FileName As String", " Byref FullName As String" } =>{ "Path As String", "FileName As String","Byref FullName As String" }
+            var buff = new List<string>();
+            foreach(var arg in resultArgs)
+            {
+                buff.Add(arg.Trim());
+            }
+            return buff.ToArray();
+            
+            //return value.Substring(startPos, endPos - startPos).Split(", ").ToArray();
+        }
+        public string GetFunctionResultValue(string value)
+        {
+            var endPos = value.IndexOf(')');
+
+            if (value.Length == endPos + 1) return "Varient";  // 戻り値の省略はVarient型
+
+            var buff = value.Substring(endPos + 2).Split(' ');
+            if (buff.Length == 2 && buff[0].ToLower() == "as") return buff[1];
+
+            throw new NotSupportedException(); // どれにも該当しなければサポート外
+        }
+
         #endregion
 
     }

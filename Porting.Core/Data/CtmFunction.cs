@@ -30,7 +30,7 @@ namespace Porting.Core.Data
         /// <summary>
         /// アクセス修飾子
         /// </summary>
-        public AccessModifierEnum AccessModifier { get; set; }
+        public AccessModifierEnum AccessModifier { get; set; } = AccessModifierEnum.None;
 
         public string Name { get; set; } = string.Empty;
 
@@ -38,8 +38,6 @@ namespace Porting.Core.Data
         
 
         public string ResultTypeName { get; set; } = string.Empty;
-
-        public CtmBase[] CodeLines = new CtmBase[0];
 
         /// <summary>
         /// コンストラクタ
@@ -54,19 +52,34 @@ namespace Porting.Core.Data
                            base(ctmBaseFunc)
         {
 
-            this.AccessModifier = ctmFunctionConText.FuncGetAccessModifier(this.Value);
 
             this.Kind = ctmFunctionConText.FuncGetKind(this.Value);
 
+
             if (this.Kind == KindEnum.StartSub || this.Kind == KindEnum.StartFunction)
             {
+                this.AccessModifier = ctmFunctionConText.FuncGetAccessModifier(this.Value);
+
+                this.Name = ctmFunctionConText.FunGetName(this.Value);
+
                 this.Args = ctmFunctionConText.FuncGetArgs(this.Value);
             }
 
-            if (this.Kind != KindEnum.StartFunction)
+            if (this.Kind == KindEnum.StartFunction)
             {
                 this.ResultTypeName = ctmFunctionConText.FunGetResultTypeName(this.Value);
             }           
+        }
+
+        public CtmFunction(int indent, string originalCode, string comment, string value, CtmBase? parent, List<CtmBase> innerCtmList,
+                           CtmFunction.KindEnum kind, CtmFunction.AccessModifierEnum accessModifier, string name, string[]? args, string returnTypeName ) 
+                            : base(indent, originalCode, comment, value, parent, innerCtmList)
+        {
+            this.Kind = kind;
+            this.AccessModifier = accessModifier;
+            this.Name = name;
+            this.Args = args;
+            this.ResultTypeName = returnTypeName;
         }
     }
 }

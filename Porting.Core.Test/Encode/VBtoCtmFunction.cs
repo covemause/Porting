@@ -2,16 +2,16 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Porting.Core.Encode;
 using Porting.Core.Data;
 
-namespace Porting.Core.Test.Data
+namespace Porting.Core.Test.Encode
 {
     [TestClass]
-    public class CtmToCS_9
+    public class VBtoCtmFunction
     {
-        private EncodeVB _enc;
+        private readonly EncodeVB6 _enc;
 
-        public CtmToCS_9()
+        public VBtoCtmFunction()
         {
-            _enc = new EncodeVB();
+            _enc = new EncodeVB6();
         }
 
         [TestMethod]
@@ -33,7 +33,8 @@ namespace Porting.Core.Test.Data
             // CtmFunctionContext
             Assert.AreEqual(ctm.AccessModifier, CtmFunction.AccessModifierEnum.Public);
             Assert.AreEqual(ctm.Kind, CtmFunction.KindEnum.StartFunction);
-            Assert.AreEqual(ctm.Args[0], "Byval strPath As String");
+            Assert.IsNotNull(ctm.Args);
+            if (ctm.Args != null) Assert.AreEqual(ctm.Args[0], "Byval strPath As String");
             Assert.AreEqual(ctm.Name, "GetFileName");
             Assert.AreEqual(ctm.ResultTypeName, "String");
 
@@ -58,8 +59,9 @@ namespace Porting.Core.Test.Data
             // CtmFunctionContext
             Assert.AreEqual(ctm.AccessModifier, CtmFunction.AccessModifierEnum.Private);
             Assert.AreEqual(ctm.Kind, CtmFunction.KindEnum.StartSub);
-            Assert.AreEqual(ctm.Args[0], "Byval strPath As String");
-            Assert.AreEqual(ctm.Args[1], "Count As Long");
+            Assert.IsNotNull(ctm.Args);
+            if (ctm.Args != null) Assert.AreEqual(ctm.Args[0], "Byval strPath As String");
+            if (ctm.Args != null) Assert.AreEqual(ctm.Args[1], "Count As Long");
             Assert.AreEqual(ctm.Name, "GetFileNameA");
             Assert.AreEqual(ctm.ResultTypeName, "");
 
@@ -84,8 +86,9 @@ namespace Porting.Core.Test.Data
             // CtmFunctionContext
             Assert.AreEqual(ctm.AccessModifier, CtmFunction.AccessModifierEnum.Private);
             Assert.AreEqual(ctm.Kind, CtmFunction.KindEnum.StartFunction);
-            Assert.AreEqual(ctm.Args[0], "Byval strPath As String");
-            Assert.AreEqual(ctm.Args[1], "Count As Long");
+            Assert.IsNotNull(ctm.Args);
+            if (ctm.Args != null) Assert.AreEqual(ctm.Args[0], "Byval strPath As String");
+            if (ctm.Args != null) Assert.AreEqual(ctm.Args[1], "Count As Long");
             Assert.AreEqual(ctm.Name, "GetFileNameA");
             Assert.AreEqual(ctm.ResultTypeName, "Varient");
 

@@ -7,6 +7,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Porting.Core", "Porting.Cor
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Porting.Core.Test", "Porting.Core.Test\Porting.Core.Test.csproj", "{DC8C91B8-98F9-4802-8FA3-D12A2DF2A4DE}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleApp", "ConsoleApp\ConsoleApp.csproj", "{B30EC722-BFB6-4F7C-8E90-048913E1FA09}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorApp1", "BlazorApp1\BlazorApp1.csproj", "{F17E16C6-CA5B-46E3-9B93-3F95559FBCBF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +25,14 @@ Global
 		{DC8C91B8-98F9-4802-8FA3-D12A2DF2A4DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DC8C91B8-98F9-4802-8FA3-D12A2DF2A4DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DC8C91B8-98F9-4802-8FA3-D12A2DF2A4DE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B30EC722-BFB6-4F7C-8E90-048913E1FA09}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B30EC722-BFB6-4F7C-8E90-048913E1FA09}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B30EC722-BFB6-4F7C-8E90-048913E1FA09}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B30EC722-BFB6-4F7C-8E90-048913E1FA09}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F17E16C6-CA5B-46E3-9B93-3F95559FBCBF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F17E16C6-CA5B-46E3-9B93-3F95559FBCBF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F17E16C6-CA5B-46E3-9B93-3F95559FBCBF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F17E16C6-CA5B-46E3-9B93-3F95559FBCBF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

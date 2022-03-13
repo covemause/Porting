@@ -24,6 +24,7 @@ namespace Porting.Core.Data
             StartFunction,
             EndFunction,
             ExitFunction,
+            ResultCode, // 戻り値のコード
         }
         public KindEnum Kind;
 

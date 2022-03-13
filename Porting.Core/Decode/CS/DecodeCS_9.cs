@@ -24,21 +24,26 @@ namespace Porting.Core.Decode
     /// ・UIのコントロール配列はどうするか。。
     /// 
     /// </remarks>
-    public class DecodeCS_9 : IDecodeCS
+    public class DecodeCS_9 : IDecode
     {
-        
+        public string Value { get; set; } = string.Empty;
 
-        public void Execute(CtmBase ctmBase, ref string result)
+        public void Execute(CtmBase ctmBase)
         {
+            ctmBase.Indent = getCtmIndent(ctmBase);
+
 
             // デコード処理
-            switch (ctmBase.GetType().ToString())
+            switch (ctmBase.GetType().Name)
             {
                 case "CtmFunction":
-                    result = parseFunc((CtmFunction)ctmBase);
+                    Value += parseFunc((CtmFunction)ctmBase);
                     break;
                 case "CtmIf":
-                    result = parseIf((CtmIf)ctmBase);
+                    Value += parseIf((CtmIf)ctmBase);
+                    break;
+                case "CtmBase":
+                    Value += parseBase(ctmBase);
                     break;
             }
 
@@ -49,7 +54,8 @@ namespace Porting.Core.Decode
             {
                 foreach(var ctm in ctmBase.InnerCtmList)
                 {
-                    Execute(ctm, ref result);
+                    Value += Environment.NewLine;
+                    Execute(ctm);
                 }
             }
         }
@@ -58,7 +64,22 @@ namespace Porting.Core.Decode
         {
             string result = "";
             string indentSpace = new string(' ', ctm.Indent);
-            string comment = " //" + ctm.Comment;
+            string indentSpaceUp = new string(' ', ctm.Indent + 4);
+            string indentSpaceDown = ctm.Indent >= 4 ? new string(' ', ctm.Indent - 4) :  "";
+            string comment = ctm.Comment != "" ? " //" + ctm.Comment : "";
+
+            if (ctm.Kind == CtmFunction.KindEnum.EndSub)
+            {
+                return indentSpace + "}" + comment;
+            }
+            if (ctm.Kind == CtmFunction.KindEnum.EndFunction)
+            {
+                if (ctm.Parent != null && ctm is not CtmFunction) throw new DecodeException("parseFunc Error! Exit Function Parent Not Found.");
+                if (ctm.Parent == null) throw new DecodeException("parseFunc Error! Exit Function Parent Null."); 
+
+                return indentSpaceUp + "return result" + ((CtmFunction)ctm.Parent).Name + ";" + comment + Environment.NewLine +
+                       indentSpace + "}";
+            }
 
 
             // アクセス修飾子
@@ -86,12 +107,12 @@ namespace Porting.Core.Decode
 
             switch (ctm.Kind)
             {
-                case CtmFunction.KindEnum.EndSub:
-                    return indentSpace + "}" + comment;
-                case CtmFunction.KindEnum.EndFunction:
-                    result = indentSpace + "return result" + ctm.Name + ";" + comment + Environment.NewLine;
-                    result += indentSpace + "}";
-                    return result;
+                //case CtmFunction.KindEnum.EndSub:
+                //    return indentSpace + "}" + comment;
+                //case CtmFunction.KindEnum.EndFunction:
+                //    result = indentSpace + "return result" + ctm.Name + ";" + comment + Environment.NewLine;
+                //    result += indentSpaceDown + "}";
+                //    return result;
                 case CtmFunction.KindEnum.ExitSub:
                     return indentSpace + "return;" + comment;
                 case CtmFunction.KindEnum.ExitFunction:
@@ -102,27 +123,160 @@ namespace Porting.Core.Decode
                              ctm.Name + '(' + argsValue + ") {";
 
                     return result;
+                case CtmFunction.KindEnum.StartFunction:
+                    result = indentSpace + accessModifierString + ' ' +
+                             resultValue + ' ' +
+                             ctm.Name + '(' + argsValue + ") {" + comment + Environment.NewLine;
+                    result += indentSpaceUp + "var result" + ctm.Name + " = " + defaultValue(ctm.ResultTypeName);
+
+                    return result;
             }
 
             return result;
         }
 
+        private int getCtmIndent(CtmBase ctm)
+        {
+            // インデントは引き継がない。自動で４にする。
+            if (ctm.Parent == null)
+            {
+                return 0;
+            }
+            else
+            {
+                if (ctm.Parent is CtmFunction)
+                {
+                    CtmFunction ctmFunc;
+                    if (ctm is CtmFunction)
+                    {
+                        ctmFunc = (CtmFunction)ctm;
+                        if (ctmFunc.Kind == CtmFunction.KindEnum.EndSub || ctmFunc.Kind == CtmFunction.KindEnum.EndFunction)
+                        {
+                            return ctmFunc.Parent == null ? 0 : ctmFunc.Parent.Indent;
+                        }
+                    }
+
+                    ctmFunc = (CtmFunction)ctm.Parent;
+                    if (ctmFunc.Kind == CtmFunction.KindEnum.StartSub || ctmFunc.Kind == CtmFunction.KindEnum.StartFunction)
+                    {
+                        return ctmFunc.Indent + 4; 
+                    }
+
+
+
+                }
+                if (ctm.Parent is CtmIf)
+                {
+                    CtmIf ctmIf;
+
+                    if (ctm is CtmIf)
+                    {
+                        ctmIf = (CtmIf)ctm;
+                        if (ctmIf.Kind == CtmIf.KindEnum.EndIf)
+                        {
+                            return ctmIf.Parent == null ? 0 : ctmIf.Parent.Indent;
+                        }
+                    }
+                    ctmIf = (CtmIf)ctm.Parent;
+                    if (ctmIf.Kind == CtmIf.KindEnum.IfThen || ctmIf.Kind == CtmIf.KindEnum.ElseIfThen)
+                    {
+                        return ctmIf.Indent + 4;
+                    }
+
+
+                }
+            }
+
+
+            return ctm.Parent.Indent;
+        }
         private string parseIf(CtmIf ctm)
         {
-            string result = "";
+            string result = "if ({0}) ";
             string indentSpace = new string(' ', ctm.Indent);
-            string comment = " //" + ctm.Comment;
+            string comment = ctm.Comment != "" ? " //" + ctm.Comment : "";
 
-            var condition = PrarseCondition(ctm.ConditionsValue);
+            if (ctm.Kind == CtmIf.KindEnum.EndIf)
+            {
+                return indentSpace + "}" + comment;
+            }
 
+            // todo : 暫定版
+            var condition = TryPrarseCondition(ctm.ConditionsValue);
 
-            return indentSpace + result + comment;
+            return indentSpace + string.Format(result, condition) + "{" + comment;
+        }
+
+        private string parseBase(CtmBase ctm)
+        {
+            string indentSpace = new string(' ', ctm.Indent);
+            string comment = ctm.Comment != "" ? " //" + ctm.Comment : "";
+
+            var spaceSplit = ctm.Value.Split(' ');
+            if (spaceSplit.Length == 3 && spaceSplit[1] == "=")
+            {
+                // 親にFunctionがあれば、関数名を取得
+                var funcName = getParentFuncName(ctm.Parent);
+
+                // 関数名と同じであれば戻り値に変更
+                var valueBuffLeft = ParseSide(spaceSplit[0]);
+                var valueBuffRigth = ParseSide(spaceSplit[2]);
+                if (funcName == valueBuffLeft)
+                {
+                    return indentSpace + "result" + funcName + " = " + valueBuffRigth + ";" + comment;
+                }
+                else
+                {
+                    return indentSpace + valueBuffLeft + " = " + valueBuffRigth + ";" + comment;
+                }
+            }
+
+            return "";
+        }
+
+        private string getParentFuncName(CtmBase? ctm)
+        {
+            // なければ終了
+            if (ctm == null) return "";
+                 
+            // ファンクションなら関数名を返す
+            if (ctm.GetType() == typeof(CtmFunction))
+            {
+                return ((CtmFunction)ctm).Name;
+            }
+
+            // 親も遡って調べる
+            return getParentFuncName(ctm.Parent);
+
+        }
+
+        // 左辺、右辺のパース
+        public string ParseSide(string value)
+        {
+            if (value == "") return "";
+
+            // True/Falseは小文字にする
+            var valueBuff = value;
+            if (valueBuff.ToLower() == "true" || valueBuff.ToLower() == "false")
+            {
+                valueBuff = valueBuff.ToLower();
+            }
+
+            // Nothingはnullにする
+            if (valueBuff.ToLower() == "nothing") valueBuff = "null";
+
+            // ![名前]の場合は.名前にする
+            valueBuff = valueBuff.Replace("[", "");
+            valueBuff = valueBuff.Replace("]", "");
+            valueBuff = valueBuff.Replace('!', '.');
+
+            return valueBuff;
         }
 
         public string ParseArgs(string[]? values)
         {
 
-            if (values == null) return String.Empty;
+            if (values == null || (values.Length == 1 && values[0] == "")) throw new DecodeException("CSDecode Error! Args Item Null");
 
             var resultArgs = new List<List<string>>();
 
@@ -175,6 +329,22 @@ namespace Porting.Core.Decode
             return result.Substring(0, result.Length - 1); // 最後のカンマを削除             
         }
 
+        private string defaultValue(string typeValue)
+        {
+            switch (typeValue.ToLower())
+            {
+                case "string":
+                    return "string.Empty;";
+                case "integer":
+                case "double":
+                case "long":
+                    return "0;";
+            }
+
+            throw new DecodeException("defaultValue Not Case :" + typeValue);
+
+        }
+
         public string ParseTypeValue(string typeValue)
         {
             switch (typeValue.ToLower())
@@ -185,13 +355,87 @@ namespace Porting.Core.Decode
                     return "long";
             }
 
-            throw new DecodeException("ResultType Not Case :" + typeValue);
+            throw new DecodeException("ParseTypeValue Not Case :" + typeValue);
+        }
+
+        // 暫定
+        public string TryPrarseCondition(string value)
+        {
+            var buff = value;
+
+            if (buff.Length == 0) return value;
+
+            if (buff.Substring(0,1) == "(")
+            {
+                // 優先のカッコあり
+            }
+
+            var notSign = false;
+            if (buff.Substring(0, 4).ToLower() == "not ")
+            {
+                notSign = true;
+                buff = buff.Substring(5);
+            }
+
+            // スペースなし。関数系なのでそのまま
+            if (buff.IndexOf(' ') == -1)
+            {
+                if (notSign)
+                {
+                    return "!" + buff;
+                }
+                else
+                {
+                    return buff;
+                }
+            }
+
+            // スペースありは条件式なので分解して確認
+            var result = string.Empty;
+            var spaceSplit = buff.Split(' ');
+            if (spaceSplit.Length == 3)
+            {
+
+                var valueBuff = ParseSide(spaceSplit[2]);
+
+                switch (spaceSplit[1])
+                {
+                    case "=":
+                    case "is":
+                        if (notSign)
+                        {
+                            result = spaceSplit[0] + " != " + valueBuff;
+                        }
+                        else
+                        {
+                            result = spaceSplit[0] + " == " + valueBuff;
+                        }
+                        break;
+                }
+            }
+
+
+            return result;
         }
 
         public List<CtmCondition> PrarseCondition(string value)
         {
+            if (value.Substring(0, 1) == "(")
+            {
+                // 優先のカッコあり
+            }
+
+            var notSign = false;
+            if (value.Substring(0, 4).ToLower() == "not ")
+            {
+                notSign = true;
+            }
+
+
+
             return new List<CtmCondition>();
         }
+
         public string PrarseCondition(List<CtmCondition> values)
         {
             var result = "";

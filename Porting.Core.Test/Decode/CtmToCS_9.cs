@@ -8,7 +8,7 @@ namespace Porting.Core.Test.Decode
     [TestClass]
     public class CtmToCS_9
     {
-        private DecodeCS_9 dec;
+        private readonly DecodeCS_9 dec;
 
         public CtmToCS_9()
         {
@@ -25,7 +25,7 @@ namespace Porting.Core.Test.Decode
             string dstVal = ""; 
             string refVal = "public string GetFileName(string strPath) {";
 
-            dec.Execute(srcCtm, ref dstVal);
+            dec.Execute(srcCtm);
 
             Assert.AreEqual(dstVal, refVal);
 

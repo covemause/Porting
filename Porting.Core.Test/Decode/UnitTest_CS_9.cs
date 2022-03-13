@@ -19,7 +19,6 @@ namespace Porting.Core.Test.Decode
         public void TestParseArgs1()
         {
             var srcVal = new string[] { "" };
-            var refVal = "";
             try
             {
                 var dstVal = dec.ParseArgs(srcVal);

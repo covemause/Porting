@@ -2,16 +2,16 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Porting.Core.Encode;
 using Porting.Core.Data;
 
-namespace Porting.Core.Test.Data
+namespace Porting.Core.Test.Encode
 {
     [TestClass]
     public class VBtoCtmBase
     {
-        private EncodeVB _enc;
+        private readonly EncodeVB6 _enc;
 
         public VBtoCtmBase()
         {
-            _enc = new EncodeVB();
+            _enc = new EncodeVB6();
         }
 
         [TestMethod]

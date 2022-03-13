@@ -13,12 +13,12 @@ namespace Porting.Core.Encode
     /// </summary>
     /// <remarks>
     /// 参考（VBA）：https://docs.microsoft.com/ja-jp/office/vba/language/reference/statements
-    /// ※異なる構文もあるが参考にはなる
+    /// ※異なる構文もあるが参考になる
     /// 
     /// コンバートできない課題一覧
     /// ・On Error Resume Next : エラー続行
     /// </remarks>
-    public class EncodeVB
+    public class EncodeVB6 : IEncode
     {
         /// <summary>
         /// エンコード種類
@@ -43,9 +43,10 @@ namespace Porting.Core.Encode
             encWith,
         }
 
-        public CtmBase? currentCtmBase = null;
+        private CtmBase? currentCtmBase = null;
+        private CtmBase? MainCtmBase = null;
 
-        public void Execute(string[] codeLines)
+        public CtmBase Execute(string[] codeLines)
         {
             currentCtmBase = null;
             foreach(var line in codeLines)
@@ -53,16 +54,38 @@ namespace Porting.Core.Encode
                 var ret = Execute(currentCtmBase, line);
                 if (ret == null) throw new NullReferenceException();
 
-                if (currentCtmBase == null)
+                if (MainCtmBase == null)
                 {
+                    MainCtmBase = ret;
+                }
+
+                // doto : 1のとき階層が深くなる。-1のとき階層を上がる。0はそのまま
+                var currentUpDown = changeCurrentBase(ret);
+                if (currentUpDown == 1)
+                {
+                    if (currentCtmBase != null)
+                    {
+                        ret.Parent = currentCtmBase;
+                        currentCtmBase.InnerCtmList.Add(ret);
+                    }
+
                     currentCtmBase = ret;
                 }
-                else
+                if (currentUpDown == -1)
+                {
+                    currentCtmBase?.InnerCtmList.Add(ret);
+                    currentCtmBase = ret.Parent?.Parent;
+                }
+
+                if (currentUpDown == 0)
                 {
                     ret.Parent = currentCtmBase;
-                    currentCtmBase.InnerCtmList.Add(ret);
+                    currentCtmBase?.InnerCtmList.Add(ret);
                 }
             }
+            if (MainCtmBase == null) throw new EncodeException("Execute Error! MainCtmBase Null");
+
+            return MainCtmBase;
         }
 
         public CtmBase? Execute(CtmBase? current, string codeLine)
@@ -102,10 +125,13 @@ namespace Porting.Core.Encode
                 case EncodePatturn.encSelect:
                     break;
                 case EncodePatturn.encSystem:
+                    result = new CtmSystem(baseContext, new CtmSystemContext(GetSystemKind));
                     break;
                 case EncodePatturn.encType:
+                    result = new CtmBase(baseContext);
                     break;
                 case EncodePatturn.encUnknown:
+                    result = new CtmBase(baseContext);
                     break;
                 case EncodePatturn.encWhile:
                     break;
@@ -193,6 +219,41 @@ namespace Porting.Core.Encode
 
             // スペース分割でのチェック
             return splitCheck(codeLine);
+        }
+
+        private int changeCurrentBase(CtmBase ctm)
+        {
+            if (ctm.GetType() == typeof(CtmFunction))
+            {
+                var ctmFunc = (CtmFunction)ctm;
+                if (ctmFunc.Kind == CtmFunction.KindEnum.StartFunction ||
+                    ctmFunc.Kind == CtmFunction.KindEnum.StartSub)
+                {
+                    return 1;
+                }
+                if (ctmFunc.Kind == CtmFunction.KindEnum.EndFunction ||
+                    ctmFunc.Kind == CtmFunction.KindEnum.EndSub)
+                {
+                    return -1;
+                }
+            }
+
+            if (ctm.GetType() == typeof(CtmIf))
+            {
+                var ctmFunc = (CtmIf)ctm;
+                if (ctmFunc.Kind == CtmIf.KindEnum.IfThen ||
+                    ctmFunc.Kind == CtmIf.KindEnum.ElseIfThen)
+                {
+                    return 1;
+                }
+                if (ctmFunc.Kind == CtmIf.KindEnum.EndIf)
+                {
+                    return -1;
+                }
+            }
+
+            return 0;
+
         }
 
         private EncodePatturn splitCheck(string codeLine)
@@ -535,6 +596,23 @@ namespace Porting.Core.Encode
             throw new NotSupportedException(); // どれにも該当しなければサポート外
         }
 
+        #endregion
+
+
+        #region CtmSystemContext
+        public CtmSystem.KindEnum GetSystemKind(string value)
+        {
+
+            switch(value)
+            {
+                case "DoEvents":
+                    return CtmSystem.KindEnum.SysDoEvent;
+                case "End":
+                    return CtmSystem.KindEnum.SysEnd;
+            }
+
+            throw new EncodeException("GetSystemKind Error!");
+        }
         #endregion
 
     }
